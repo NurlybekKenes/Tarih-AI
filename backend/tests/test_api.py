@@ -1,5 +1,7 @@
 import unittest
+import os
 import httpx
+from unittest.mock import patch
 
 from backend.app.main import app
 
@@ -15,6 +17,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
     result = (await request("GET", "/api/events?language=kk")).json()
     self.assertGreaterEqual(result["total"], 2)
     self.assertTrue(all(item["title"] for item in result["items"]))
+    self.assertTrue(any(item["slug"] == "abilai-khan-reign" for item in result["items"]))
 
 
   async def test_event_detail_search_and_404(self):
@@ -22,13 +25,26 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
     self.assertEqual(detail.status_code, 200)
     self.assertTrue(detail.json()["sources"][0]["url"].startswith("https://"))
     self.assertEqual((await request("GET", "/api/search?q=Таңбалы&language=kk")).json()["total"], 1)
+    abilai = await request("GET", "/api/events/abilai-khan-reign?language=ru")
+    self.assertEqual(abilai.status_code, 200)
+    self.assertEqual(abilai.json()["date_from"], "1771-01-01")
+    self.assertEqual(len(abilai.json()["sources"]), 2)
+    self.assertEqual((await request("GET", "/api/search?q=Абылай&language=kk")).json()["total"], 1)
     self.assertEqual((await request("GET", "/api/events/missing")).status_code, 404)
 
 
   async def test_chat_demo_sources_and_insufficient_data(self):
-    answer = (await request("POST", "/api/chat", json={"question": "Что произошло 16 декабря 1991 года?", "language": "ru"})).json()
+    demo_env = {"LLM_BASE_URL": "", "LLM_API_KEY": "", "LLM_MODEL": ""}
+    with patch.dict(os.environ, demo_env):
+      answer = (await request("POST", "/api/chat", json={"question": "Что произошло 16 декабря 1991 года?", "language": "ru"})).json()
     self.assertEqual(answer["mode"], "demo")
     self.assertTrue(answer["sources"] and all(source["url"].startswith("https://") for source in answer["sources"]))
+    with patch.dict(os.environ, demo_env):
+      abilai = (await request("POST", "/api/chat", json={"question": "Какие годы правил Абылай хан?", "language": "ru"})).json()
+    self.assertEqual(abilai["mode"], "demo")
+    self.assertFalse(abilai["insufficient_data"])
+    self.assertIn("1771–1781", abilai["answer"])
+    self.assertEqual(len(abilai["sources"]), 2)
     empty = (await request("POST", "/api/chat", json={"question": "Расскажи о вымышленной династии зета", "language": "ru"})).json()
     self.assertEqual(empty["sources"], [])
     self.assertIs(empty["insufficient_data"], True)

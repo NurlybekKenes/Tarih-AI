@@ -13,6 +13,11 @@ const API = ''
 function eventDate(event: HistoricalEvent, language: Language) {
   if (event.slug === 'tanbaly-petroglyphs') return language === 'kk' ? 'Қола дәуірінен · шамамен' : 'С бронзового века · примерно'
   if (event.slug === 'kazakhstan-independence') return language === 'kk' ? '1991 жылғы 16 желтоқсан' : '16 декабря 1991 г.'
+  if (event.date_precision === 'year-range') {
+    const start = event.date_from.slice(0, 4)
+    const end = event.date_to.slice(0, 4)
+    return language === 'kk' ? `${start}–${end} жылдары` : `${start}–${end} гг.`
+  }
   const date = new Date(`${event.date_from}T00:00:00Z`)
   return new Intl.DateTimeFormat(language === 'kk' ? 'kk-KZ' : 'ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date)
 }
