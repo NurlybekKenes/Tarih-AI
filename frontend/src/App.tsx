@@ -17,6 +17,7 @@ type HistoricalEvent = {
 type ChatMessage = { id: number; role: 'user' | 'assistant'; text: string; sources?: Source[]; mode?: string; insufficient?: boolean; webUnavailable?: boolean }
 
 const API = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
+const ADMIN_UI_ENABLED = import.meta.env.VITE_ADMIN_UI_ENABLED !== 'false'
 
 function eventDate(event: HistoricalEvent, language: Language) {
   if (event.slug === 'tanbaly-petroglyphs') return language === 'kk' ? 'Қола дәуірінен · шамамен' : 'С бронзового века · примерно'
@@ -258,7 +259,7 @@ function App() {
     <header className="site-header">
       <a className="brand" href="#top" aria-label="Тарих / Tarih — на главную"><span className="brand-mark" aria-hidden="true">т</span><span>Тарих <i>/</i> Tarih</span></a>
       <nav className="main-nav" aria-label={language === 'kk' ? 'Негізгі навигация' : 'Основная навигация'}>
-        <a href="#timeline">{t.navTimeline}</a><a href="#guide">{t.navGuide}</a><a href="#library-admin">{t.navLibrary}</a>
+        <a href="#timeline">{t.navTimeline}</a><a href="#guide">{t.navGuide}</a>{ADMIN_UI_ENABLED && <a href="#library-admin">{t.navLibrary}</a>}
       </nav>
       <div className="header-actions">
         <div className="language-switch" role="group" aria-label={language === 'kk' ? 'Интерфейс тілі' : 'Язык интерфейса'}>
@@ -305,7 +306,7 @@ function App() {
         {!loading && !loadError && documents.length > 0 && <section className="document-results" aria-labelledby="document-results-title"><h3 id="document-results-title">{t.documentResults}</h3><div className="document-result-list">{documents.map((document) => <article className="document-result" key={`${document.source_id}-${document.chunk_index}`}><div><strong>{document.title}</strong><span>{document.publisher} · {document.language.toUpperCase()}</span></div><p>{document.excerpt}</p><small>{t.documentImportedNote}</small></article>)}</div></section>}
       </section>
 
-      <section className="library-admin" id="library-admin" aria-labelledby="library-title">
+      {ADMIN_UI_ENABLED && <section className="library-admin" id="library-admin" aria-labelledby="library-title">
         <div className="library-heading"><p className="eyebrow"><span className="eyebrow-rule" />{t.navLibrary}</p><h2 id="library-title">{t.libraryTitle}</h2><p>{t.libraryBody}</p></div>
         <div className="library-panel">
           <form className="admin-access-form" onSubmit={(event) => { event.preventDefault(); void loadManagedDocuments() }}>
@@ -361,7 +362,7 @@ function App() {
           {documentsAdminError && <p className="admin-error" role="alert">{documentsAdminError}</p>}
           {documentsAdminNotice && <p className="admin-success" role="status">{documentsAdminNotice}</p>}
         </div>
-      </section>
+      </section>}
 
       <section className="guide-section" id="guide" aria-labelledby="guide-title">
         <div className="guide-intro"><p className="eyebrow"><span className="eyebrow-rule" />{t.guideEyebrow}</p><h2 id="guide-title">{t.guideTitle}</h2><p>{t.guideBody}</p>
