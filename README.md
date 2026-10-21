@@ -82,6 +82,20 @@ Open `http://localhost:8080`. Nginx serves the frontend and proxies `/api` and `
 
 The `.env` file is private local configuration and is ignored by Git. Keep `TARIH_ADMIN_TOKEN` strong before enabling document imports or editorial actions. `TAVILY_API_KEY` and LLM settings are optional; without them, the demo/fallback behavior remains available.
 
+## Deploy to Vercel
+
+The repository is prepared for two Vercel projects connected to the same GitHub repository. This keeps the Vite frontend and FastAPI backend in their supported Vercel runtimes:
+
+1. Create the frontend project and set **Root Directory** to `frontend`. Use the Vite preset, build command `npm run build`, and output directory `dist`.
+2. Create the backend project from the same repository and set **Root Directory** to `backend`. Vercel detects the FastAPI app exported by `index.py` and installs `requirements.txt`.
+3. In the backend project's environment variables, set `TARIH_DATABASE_PATH=/tmp/tarih.sqlite3`. Add `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, and `TAVILY_API_KEY` only when enabling those integrations. Keep `TARIH_ADMIN_TOKEN` unset until persistent storage and admin authentication are ready.
+4. After the frontend's production domain is assigned, set backend `CORS_ORIGINS` to that exact origin (for example, `https://your-tarih-domain.vercel.app`). Set the frontend project's `VITE_API_BASE_URL` to the backend's production origin (for example, `https://your-tarih-api.vercel.app`) and redeploy both projects.
+5. Verify the backend at `/health` and `/docs`, then open the frontend and try timeline, search, and chat. Check backend deployment logs if Vercel returns a function error.
+
+**Storage limitation:** `/tmp` is temporary function storage, can differ by serverless instance, and is not durable across cold starts or deployments. The seeded demo catalog can be recreated by migrations, but uploaded documents and approved editorial revisions must not be treated as persistent on Vercel. Do not enable document import or editorial writes for real users until the repository is moved to shared persistent storage such as PostgreSQL. This is a deployment-ready demo setup, not yet a production data configuration.
+
+The UI reads the API origin from `VITE_API_BASE_URL`; leave it blank for the existing same-origin local Vite proxy. The backend allows the comma-separated exact origins in `CORS_ORIGINS`.
+
 To enable internet search, set `TAVILY_API_KEY` in the backend `.env` and restart the backend. The key stays on the server. Without it, the guide continues with local sources and tells the user when a requested web search is unavailable. In chat, select **Tarih database**, **Internet**, or **Database + internet**. Internet search sends the question to Tavily; retrieved snippets are treated as untrusted evidence, and each result is shown in a separate Internet sources group with the date fetched. Tavily's official API uses `POST https://api.tavily.com/search` with Bearer authentication ([API overview](https://help.tavily.com/articles/4840311948-tavily-search-api)).
 
 Copy `.env.example` to `.env` only if you want to configure an optional compatible AI endpoint. Do not commit secrets. An OpenRouter-compatible provider request was verified in a previous development session; repeat a live request after changing local credentials or model settings.

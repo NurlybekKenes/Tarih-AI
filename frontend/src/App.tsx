@@ -16,7 +16,7 @@ type HistoricalEvent = {
 }
 type ChatMessage = { id: number; role: 'user' | 'assistant'; text: string; sources?: Source[]; mode?: string; insufficient?: boolean; webUnavailable?: boolean }
 
-const API = ''
+const API = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
 
 function eventDate(event: HistoricalEvent, language: Language) {
   if (event.slug === 'tanbaly-petroglyphs') return language === 'kk' ? 'Қола дәуірінен · шамамен' : 'С бронзового века · примерно'

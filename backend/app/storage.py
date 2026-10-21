@@ -11,9 +11,9 @@ from pathlib import Path
 
 from .data import EVENTS, SOURCES
 
-ROOT = Path(__file__).resolve().parents[2]
-MIGRATIONS = ROOT / "backend" / "migrations"
-DEFAULT_DB = ROOT / "backend" / "data" / "tarih.sqlite3"
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+MIGRATIONS = BACKEND_ROOT / "migrations"
+DEFAULT_DB = BACKEND_ROOT / "data" / "tarih.sqlite3"
 
 PERIODS = [
     {"slug": "ancient-history", "title_kk": "Ежелгі тарих", "title_ru": "Древняя история", "start_year": -2000, "end_year": 500, "description_kk": "Қазақстан аумағындағы көне мәдениеттер.", "description_ru": "Древние культуры на территории Казахстана.", "sort_order": 1},
@@ -33,7 +33,12 @@ EVENT_PERIOD = {
 
 def _database_path() -> Path:
     raw = os.getenv("TARIH_DATABASE_PATH")
-    return Path(raw).expanduser().resolve() if raw else DEFAULT_DB
+    if raw:
+        return Path(raw).expanduser().resolve()
+    if os.getenv("VERCEL"):
+        # Vercel's deployed filesystem is read-only except for temporary /tmp storage.
+        return Path("/tmp/tarih.sqlite3")
+    return DEFAULT_DB
 
 
 def connect() -> sqlite3.Connection:
